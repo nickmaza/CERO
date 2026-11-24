@@ -27,9 +27,9 @@ import {
   serif,
 } from '@/components/ui';
 import type { Employment, Payment } from '@/lib/database.types';
-import { JOB_LABEL, formatDate, todayGT } from '@/lib/format';
+import { JOB_LABEL, formatDate, formatInviteCode, todayGT } from '@/lib/format';
 import { END_REASON_LABEL, ZONE_LABEL, checkMinimumWage, formatQ, upcomingObligations, type EconomicZone, type EndReason } from '@/lib/pay';
-import { supabase } from '@/lib/supabase';
+import { friendlyError, supabase } from '@/lib/supabase';
 import { useLayout } from '@/lib/useLayout';
 import { unwrap, useQuery } from '@/lib/useQuery';
 
@@ -59,16 +59,26 @@ export default function WorkerDetail() {
   const upcoming = active ? upcomingObligations(salary, e.start_date, todayGT()) : [];
   const go = (path: '/trabajadora/[id]/pago' | '/trabajadora/[id]/editar' | '/trabajadora/[id]/finiquito') => router.push({ pathname: path, params: { id } });
 
+  const code = formatInviteCode(e.invite_code);
+
   async function copyCode() {
-    await Clipboard.setStringAsync(e.invite_code);
+    await Clipboard.setStringAsync(code);
     toast('Código copiado');
+  }
+
+  // Issues a new code; the old one stops working. Useful if it was sent to the wrong person.
+  async function resetCode() {
+    const { error: err } = await supabase.rpc('reset_invite_code', { employment_id: e.id });
+    if (err) return toast(friendlyError(err), 'warn');
+    toast('Nuevo código listo; el anterior ya no funciona');
+    await refresh();
   }
 
   async function shareInvite() {
     await Share.share({
       message:
         `Hola ${firstName}, registré tu trabajo en CERO para llevar tus pagos en orden. ` +
-        `Descarga la app, crea tu cuenta como trabajadora y escribe este código: ${e.invite_code}`,
+        `Descarga la app, crea tu cuenta como trabajadora y escribe este código: ${code}`,
     });
   }
 
@@ -146,7 +156,7 @@ export default function WorkerDetail() {
             <Muted>Comparte este código. Cuando lo escriba en su app, verá sus pagos y podrá confirmar cada uno.</Muted>
             <View style={styles.codeBox}>
               <Text selectable style={styles.code}>
-                {e.invite_code}
+                {code}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -157,6 +167,8 @@ export default function WorkerDetail() {
                 <Button title="Compartir" icon="share-social-outline" onPress={shareInvite} />
               </View>
             </View>
+            <Muted style={{ textAlign: 'center' }}>Compártelo solo con {firstName}. Sirve una sola vez.</Muted>
+            <Button title="Cambiar código" icon="refresh-outline" variant="ghost" onPress={resetCode} />
           </Card>
         </>
       ) : null}
@@ -209,5 +221,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginVertical: 6,
   },
-  code: { fontFamily: serif, fontSize: 36, fontWeight: '700', letterSpacing: 10, color: colors.brandDark, textAlign: 'center' },
+  code: { fontFamily: serif, fontSize: 36, fontWeight: '700', letterSpacing: 4, color: colors.brandDark, textAlign: 'center' },
 });

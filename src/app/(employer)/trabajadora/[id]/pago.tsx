@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Text } from 'react-native';
 
 import { PAYMENT_ICON } from '@/components/PaymentList';
@@ -64,8 +64,9 @@ export default function RegisterPayment() {
   );
   const [kind, setKind] = useState<Kind>('salario');
   const [paidOn, setPaidOn] = useState(toDMY(todayGT()));
-  const [amount, setAmount] = useState('');
-  const [incentive, setIncentive] = useState('');
+  // null = use CERO's suggested amount for the chosen kind; a string = what the person typed.
+  const [amountInput, setAmountInput] = useState<string | null>(null);
+  const [incentiveInput, setIncentiveInput] = useState<string | null>(null);
   const [method, setMethod] = useState<Method>('efectivo');
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
@@ -74,14 +75,17 @@ export default function RegisterPayment() {
   const paidIso = parseDMY(paidOn);
   const sug = useMemo(() => (e && paidIso ? suggestion(e, kind, paidIso) : null), [e, kind, paidIso]);
 
-  // Prefill the amount whenever the kind of payment changes.
-  useEffect(() => {
-    if (!e) return;
-    const s = suggestion(e, kind, parseDMY(paidOn) ?? todayGT());
-    setAmount(s.amount ? s.amount.toFixed(2) : '');
-    setIncentive(kind === 'salario' ? Number(e.incentive_bonus).toFixed(2) : '0');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [e, kind]);
+  const amount = amountInput ?? (sug?.amount ? sug.amount.toFixed(2) : '');
+  const incentive = incentiveInput ?? (kind === 'salario' && e ? Number(e.incentive_bonus).toFixed(2) : '0');
+  const setAmount = (t: string) => setAmountInput(t);
+  const setIncentive = (t: string) => setIncentiveInput(t);
+
+  // Choosing a different kind of payment brings back the suggested amounts.
+  function chooseKind(k: Kind) {
+    setKind(k);
+    setAmountInput(null);
+    setIncentiveInput(null);
+  }
 
   if (loading && !e) return <Loading />;
   if (!e) return null;
@@ -129,7 +133,7 @@ export default function RegisterPayment() {
       <Choice<Kind>
         label="¿Qué estás pagando?"
         value={kind}
-        onChange={setKind}
+        onChange={chooseKind}
         options={(Object.keys(PAYMENT_LABEL) as Kind[]).map((k) => ({ value: k, label: PAYMENT_LABEL[k], icon: PAYMENT_ICON[k] }))}
       />
       <MoneyField label="Monto" value={amount} onChangeText={setAmount} />

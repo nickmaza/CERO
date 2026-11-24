@@ -40,6 +40,16 @@ export function greeting(): string {
   return 'Buenas noches';
 }
 
+/** Matches what the database accepts: 6–25 digits, spaces, +, -, ( or ). */
+export function isValidPhone(input: string): boolean {
+  return /^[0-9+() -]{6,25}$/.test(input.trim());
+}
+
+/** "ABCD2345" → "ABCD-2345", easier to read aloud and type. */
+export function formatInviteCode(code: string): string {
+  return code.length === 8 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
+}
+
 /** Accepts "4,002.28", "4002.28" or "4002,28". Returns null for anything else. */
 export function parseAmount(input: string): number | null {
   const s = input.trim().replace(/^Q\s*/i, '');

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -145,7 +145,7 @@ export function Grid({ children, minWidth = 300 }: { children: ReactNode[]; minW
 
 /** Slides content up gently as it appears; `delay` staggers lists. */
 export function FadeIn({ children, delay = 0, style }: { children: ReactNode; delay?: number; style?: StyleProp<ViewStyle> }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
   useEffect(() => {
     Animated.timing(anim, {
       toValue: 1,
@@ -187,7 +187,7 @@ export function PressableScale({
   accessibilityState?: { selected?: boolean; disabled?: boolean; busy?: boolean };
   haptics?: boolean;
 }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const [scale] = useState(() => new Animated.Value(1));
   const to = (v: number) => Animated.spring(scale, { toValue: v, useNativeDriver: nativeDriver, speed: 40, bounciness: 6 }).start();
   return (
     <Pressable
@@ -525,7 +525,7 @@ export function NumberPicker({ label, value, onChange, min, max }: { label: stri
 }
 
 export function Toggle({ label, detail, value, onChange }: { label: string; detail?: string; value: boolean; onChange: (v: boolean) => void }) {
-  const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const [anim] = useState(() => new Animated.Value(value ? 1 : 0));
   useEffect(() => {
     Animated.timing(anim, { toValue: value ? 1 : 0, duration: 180, useNativeDriver: false }).start();
   }, [anim, value]);
@@ -626,7 +626,7 @@ export function Avatar({ name, size = 48 }: { name: string; size?: number }) {
 }
 
 export function ProgressBar({ value, color = colors.white, track = 'rgba(255,255,255,0.3)' }: { value: number; color?: string; track?: string }) {
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
   useEffect(() => {
     Animated.timing(anim, { toValue: Math.max(0, Math.min(1, value)), duration: 700, delay: 200, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   }, [anim, value]);

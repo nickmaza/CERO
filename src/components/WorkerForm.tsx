@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import type { Employment } from '@/lib/database.types';
-import { JOB_LABEL, parseAmount, parseDMY, toDMY, todayGT } from '@/lib/format';
+import { JOB_LABEL, isValidPhone, parseAmount, parseDMY, toDMY, todayGT } from '@/lib/format';
 import { INCENTIVE_BONUS, MINIMUM_WAGE_2026, ZONE_LABEL, checkMinimumWage, formatQ, type EconomicZone } from '@/lib/pay';
 
 import {
@@ -27,7 +27,6 @@ import {
 export interface WorkerFormValues {
   worker_name: string;
   worker_phone: string | null;
-  worker_dpi: string | null;
   job_type: string;
   start_date: string;
   days_per_week: number;
@@ -63,7 +62,6 @@ export function WorkerForm({
   const [step, setStep] = useState(0);
   const [name, setName] = useState(initial?.worker_name ?? '');
   const [phone, setPhone] = useState(initial?.worker_phone ?? '');
-  const [dpi, setDpi] = useState(initial?.worker_dpi ?? '');
   const [job, setJob] = useState(initial?.job_type ?? 'limpieza');
   const [start, setStart] = useState(initial ? toDMY(initial.start_date) : toDMY(todayGT()));
   const [days, setDays] = useState(initial?.days_per_week ?? 5);
@@ -80,12 +78,15 @@ export function WorkerForm({
 
   function validate(s: number): string | null {
     if (s === 0 && !name.trim()) return 'Escribe su nombre.';
+    if (s === 0 && name.trim().length > 120) return 'El nombre es demasiado largo.';
+    if (s === 0 && phone.trim() && !isValidPhone(phone)) return 'Escribe un teléfono válido, por ejemplo 5555 1234.';
     if (s === 1) {
       const iso = parseDMY(start);
       if (!iso) return 'Escribe la fecha de inicio como DD/MM/AAAA.';
       if (iso > todayGT()) return 'La fecha de inicio no puede ser futura.';
     }
     if (s === 2 && (salaryNum === null || salaryNum <= 0)) return 'Escribe el salario mensual, por ejemplo 4002.28.';
+    if (s === 2 && salaryNum !== null && salaryNum > 1_000_000) return 'Revisa el salario: es demasiado alto.';
     return null;
   }
 
@@ -103,7 +104,6 @@ export function WorkerForm({
     const result = await onSubmit({
       worker_name: name.trim(),
       worker_phone: phone.trim() || null,
-      worker_dpi: dpi.trim() || null,
       job_type: job,
       start_date: parseDMY(start)!,
       days_per_week: days,
@@ -126,7 +126,7 @@ export function WorkerForm({
           <Subtitle>¿Quién trabaja en tu casa?</Subtitle>
           <Field label="Nombre completo" value={name} onChangeText={setName} autoCapitalize="words" icon="person-outline" placeholder="María Ajú" />
           <Field label="Teléfono (opcional)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" icon="call-outline" />
-          <Field label="DPI (opcional)" value={dpi} onChangeText={setDpi} keyboardType="number-pad" icon="card-outline" hint="Lo necesitarás para inscribirla en el IGSS." />
+          <Muted>Por su privacidad, CERO no guarda su DPI ni otros documentos de identidad.</Muted>
         </FadeIn>
       ) : null}
 

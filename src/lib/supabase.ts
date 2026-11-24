@@ -78,7 +78,11 @@ export function friendlyError(error: unknown): string {
   if (/Invalid login credentials/i.test(msg)) return 'Correo o contraseña incorrectos.';
   if (/Email not confirmed/i.test(msg)) return 'Confirma tu correo con el enlace que te enviamos y vuelve a entrar.';
   if (/User already registered/i.test(msg)) return 'Ya existe una cuenta con ese correo. Inicia sesión.';
-  if (/Password should be at least/i.test(msg)) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (/Password should be at least|weak password/i.test(msg)) return 'La contraseña es muy débil. Usa al menos 8 caracteres, con letras y números.';
+  if (/rate limit|too many requests/i.test(msg)) return 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.';
+  if (/violates check constraint/i.test(msg)) return 'Revisa los datos: algún valor es demasiado largo o está fuera de lo permitido.';
+  if (/permission denied|row-level security/i.test(msg)) return 'No tienes permiso para hacer ese cambio.';
+  if (/JWT expired|session.*(missing|expired)/i.test(msg)) return 'Tu sesión expiró. Vuelve a iniciar sesión.';
   if (/Network request failed|Failed to fetch/i.test(msg)) return 'Sin conexión. Revisa tu internet e intenta de nuevo.';
   return msg;
 }

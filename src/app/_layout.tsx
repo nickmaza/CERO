@@ -1,14 +1,22 @@
 import { Stack } from 'expo-router';
+import { useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { stackScreenOptions } from '@/components/navigation';
-import { ToastProvider } from '@/components/Toast';
+import { ToastProvider, useToast } from '@/components/Toast';
 import { Banner, Button, EmptyState, Loading, Screen } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { useIdleSignOut } from '@/lib/useIdleSignOut';
 
 function RootStack() {
   const { session, profile, loading, refreshProfile, signOut } = useAuth();
+  const toast = useToast();
+  const onIdle = useCallback(() => {
+    void signOut();
+    toast('Cerramos tu sesión por inactividad', 'info');
+  }, [signOut, toast]);
+  useIdleSignOut(!!session, onIdle);
 
   // Guards are evaluated on the client, so wait until the session and profile are known.
   if (loading) return <Loading />;

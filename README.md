@@ -42,12 +42,25 @@ Phones and the web share the same screens and features. In a computer's browser 
 ### Database
 
 - `profiles`: one per account, with role `employer` or `worker`, created automatically at sign-up.
-- `employments`: a family's worker, salary, start date, zone and a 6-character invite code.
+- `employments`: a family's worker, salary, start date, zone and an 8-character invite code (shown as `ABCD-2345`).
 - `payments`: each payment (salary, Bono 14, aguinaldo, vacations, severance), plus whether the worker confirmed it.
+- `audit_log`: every change to a job or payment, written by the database itself. Both sides can read it; nobody can edit or delete it.
 
 Security rules, tested against the live database with simulated users:
 
 - Families see and edit only their own workers and payments.
 - A worker sees only the jobs she connected with a code, and can't edit them.
-- Only the worker can confirm a payment, and a confirmed payment can't be changed afterwards.
+- Only the worker can confirm a payment, and a confirmed payment can't be changed or deleted afterwards.
+- A job with payment history, or with a worker already connected, can't be deleted.
 - No one can change their own role, and signed-out visitors see nothing.
+- Invite codes are random, single-use and can be replaced by the family. After 5 wrong codes in 15 minutes an account is locked out for 15 minutes.
+- Only the columns a screen needs can be written; ids, owners and confirmation fields are off limits to the app.
+- Lengths, phone format and amounts are checked by the database, not just the app.
+
+### Privacy
+
+CERO keeps the least it can. It does not store DPI numbers or other identity documents, and it has no file uploads. What is stored (names, phone, salary, payments) lives in Supabase, encrypted at rest and over the network, and is only reachable through the rules above.
+
+On the website, a session ends after 30 minutes without activity. The site sends strict security headers (see `vercel.json`): it only talks to our Supabase project, can't be framed by another site, and always uses HTTPS.
+
+Supabase dashboard settings to keep on: email confirmation, minimum password length 8 with letters and numbers, and Site URL / Redirect URLs set to the Vercel address.

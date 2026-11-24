@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { friendlyError } from './supabase';
 
@@ -13,7 +13,11 @@ export function useQuery<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
+  // Refetch when the inputs (such as the record id) change.
+  const depsKey = JSON.stringify(deps);
 
   const refetch = useCallback(async () => {
     try {
@@ -35,8 +39,9 @@ export function useQuery<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
   useFocusEffect(
     useCallback(() => {
       void refetch();
+      // depsKey is listed so a new id triggers a fresh load.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refetch, ...deps]),
+    }, [refetch, depsKey]),
   );
 
   return { data, error, loading, refetch, refresh, refreshing };

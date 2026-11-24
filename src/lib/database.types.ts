@@ -24,7 +24,6 @@ export type Database = {
           monthly_salary: number;
           start_date: string;
           status: string;
-          worker_dpi: string | null;
           worker_name: string;
           worker_phone: string | null;
           worker_user_id: string | null;
@@ -45,7 +44,6 @@ export type Database = {
           monthly_salary: number;
           start_date: string;
           status?: string;
-          worker_dpi?: string | null;
           worker_name: string;
           worker_phone?: string | null;
           worker_user_id?: string | null;
@@ -66,7 +64,6 @@ export type Database = {
           monthly_salary?: number;
           start_date?: string;
           status?: string;
-          worker_dpi?: string | null;
           worker_name?: string;
           worker_phone?: string | null;
           worker_user_id?: string | null;
@@ -168,9 +165,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
-      claim_employment: { Args: { code: string }; Returns: string };
+      /** Returns null when the code is wrong or already used. */
+      claim_employment: { Args: { code: string }; Returns: string | null };
       confirm_payment: { Args: { payment_id: string }; Returns: undefined };
-      new_invite_code: { Args: never; Returns: string };
+      reset_invite_code: { Args: { employment_id: string }; Returns: string };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

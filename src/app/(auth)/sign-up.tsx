@@ -1,8 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { Platform } from 'react-native';
 
 import { Banner, Button, Choice, EmptyState, Field, FadeIn, Muted, Title } from '@/components/ui';
 import { AuthShell } from '@/components/AuthShell';
+import { isValidPhone } from '@/lib/format';
 import { friendlyError, supabase } from '@/lib/supabase';
 
 type Role = 'employer' | 'worker';
@@ -22,12 +24,20 @@ export default function SignUp() {
     setError(null);
     if (!fullName.trim()) return setError('Escribe tu nombre.');
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Escribe un correo válido.');
-    if (password.length < 6) return setError('La contraseña debe tener al menos 6 caracteres.');
+    if (fullName.trim().length > 120) return setError('El nombre es demasiado largo.');
+    if (phone.trim() && !isValidPhone(phone)) return setError('Escribe un teléfono válido, por ejemplo 5555 1234.');
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return setError('La contraseña debe tener al menos 8 caracteres, con letras y números.');
+    }
     setBusy(true);
     const { data, error: err } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { data: { role, full_name: fullName.trim(), phone: phone.trim() || null } },
+      options: {
+        data: { role, full_name: fullName.trim(), phone: phone.trim() || null },
+        // On the website, the confirmation link brings people back to this same site.
+        emailRedirectTo: Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : undefined,
+      },
     });
     setBusy(false);
     if (err) return setError(friendlyError(err));
@@ -74,7 +84,7 @@ export default function SignUp() {
         secureTextEntry
         autoCapitalize="none"
         icon="lock-closed-outline"
-        hint="Mínimo 6 caracteres."
+        hint="Mínimo 8 caracteres, con letras y números."
       />
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <Button title="Crear cuenta" icon="arrow-forward" onPress={submit} loading={busy} />

@@ -97,7 +97,7 @@ export default function WorkerHome() {
             <EmptyState
               icon="key-outline"
               title="Conecta con tu empleador(a)"
-              text="Pídele el código de CERO de 6 letras y números. Con él verás tus pagos y podrás confirmar cada uno."
+              text="Pídele el código de CERO de 8 letras y números. Con él verás tus pagos y podrás confirmar cada uno."
             >
               <ClaimCode onClaimed={refetch} />
             </EmptyState>
@@ -202,11 +202,13 @@ function ClaimCode({ onClaimed }: { onClaimed: () => void }) {
 
   async function claim() {
     setError(null);
-    if (code.trim().length !== 6) return setError('El código tiene 6 letras y números.');
+    const clean = code.replace(/[^A-Z0-9]/g, '');
+    if (clean.length !== 8) return setError('El código tiene 8 letras y números, por ejemplo ABCD-2345.');
     setBusy(true);
-    const { error: err } = await supabase.rpc('claim_employment', { code: code.trim() });
+    const { data, error: err } = await supabase.rpc('claim_employment', { code: clean });
     setBusy(false);
     if (err) return setError(friendlyError(err));
+    if (!data) return setError('Ese código no es válido o ya se usó. Revísalo con tu empleador(a).');
     setCode('');
     toast('¡Conectada! Ya puedes ver tus pagos');
     onClaimed();
@@ -217,11 +219,15 @@ function ClaimCode({ onClaimed }: { onClaimed: () => void }) {
       <Field
         label="Código de tu empleador(a)"
         value={code}
-        onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+        onChangeText={(t) => {
+          // Keep letters and numbers, and show them as ABCD-2345.
+          const clean = t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+          setCode(clean.length > 4 ? `${clean.slice(0, 4)}-${clean.slice(4)}` : clean);
+        }}
         autoCapitalize="characters"
-        placeholder="ABC123"
+        placeholder="ABCD-2345"
         icon="key-outline"
-        maxLength={6}
+        maxLength={9}
       />
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <Button title="Conectar" icon="link-outline" onPress={claim} loading={busy} />
